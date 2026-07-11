@@ -1,0 +1,11 @@
+# Archivos compilados
+target/
+*.class
+
+# Archivos de IntelliJ IDEA
+.idea/
+*.iml
+
+# Archivos de sistema operativo
+.DS_Store
+Thumbs.db
