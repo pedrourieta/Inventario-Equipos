@@ -5,10 +5,6 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.*;
 
-/**
- * Ventana principal del inventario de equipos de cómputo.
- * Conectada a MySQL para operaciones CRUD.
- */
 @SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve", "SpellCheckingInspection"})
 public class InventarioFrame extends JFrame {
 
@@ -124,7 +120,7 @@ public class InventarioFrame extends JFrame {
     }
 
     private void agregarEquipo() {
-        if (!camposValidos()) return;
+        if (camposValidos()) return;
 
         String sql = "INSERT INTO equipos (nombre, tipo, marca, modelo, numero_serie, estado, ubicacion) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
@@ -153,7 +149,7 @@ public class InventarioFrame extends JFrame {
             JOptionPane.showMessageDialog(this, "Selecciona un equipo de la tabla para editarlo.");
             return;
         }
-        if (!camposValidos()) return;
+        if (camposValidos()) return;
 
         String sql = "UPDATE equipos SET nombre=?, tipo=?, marca=?, modelo=?, numero_serie=?, estado=?, ubicacion=? WHERE id=?";
 
@@ -247,9 +243,9 @@ public class InventarioFrame extends JFrame {
                 || txtModelo.getText().trim().isEmpty() || txtNumeroSerie.getText().trim().isEmpty()
                 || txtUbicacion.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Llena todos los campos antes de continuar.");
-            return false;
+            return true;
         }
-        return true;
+        return false;
     }
 
     private void limpiarCampos() {
