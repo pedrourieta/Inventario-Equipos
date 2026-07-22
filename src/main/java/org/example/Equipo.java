@@ -1,9 +1,5 @@
 package org.example;
 
-/**
- * Representa un equipo de cómputo dentro del inventario.
- * Es una clase modelo simple, solo guarda los datos de cada equipo.
- */
 public class Equipo {
 
     private int id;

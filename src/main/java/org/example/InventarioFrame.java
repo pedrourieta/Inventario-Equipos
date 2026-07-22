@@ -11,14 +11,6 @@ public class InventarioFrame extends JFrame {
     private DefaultTableModel modeloTabla;
     private JTable tabla;
 
-    private JTextField txtNombre;
-    private JComboBox<String> cmbTipo;
-    private JTextField txtMarca;
-    private JTextField txtModelo;
-    private JTextField txtNumeroSerie;
-    private JComboBox<String> cmbEstado;
-    private JTextField txtUbicacion;
-
     private int idSeleccionado = -1;
 
     public InventarioFrame() {
@@ -29,52 +21,15 @@ public class InventarioFrame extends JFrame {
 
     private void configurarVentana() {
         setTitle("Inventario de Equipos de Cómputo");
-        setSize(900, 550);
+        setSize(800, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
     }
 
     private void crearComponentes() {
-        add(crearPanelFormulario(), BorderLayout.NORTH);
         add(crearPanelTabla(), BorderLayout.CENTER);
         add(crearPanelBotones(), BorderLayout.SOUTH);
-    }
-
-    private JPanel crearPanelFormulario() {
-        JPanel panel = new JPanel(new GridLayout(2, 8, 8, 8));
-        panel.setBorder(BorderFactory.createTitledBorder("Datos del equipo"));
-
-        String[] tipos = {"Laptop", "Escritorio", "Monitor", "Impresora", "Servidor", "Otro"};
-        String[] estados = {"Disponible", "En uso", "Mantenimiento", "Baja"};
-
-        txtNombre = new JTextField();
-        cmbTipo = new JComboBox<>(tipos);
-        txtMarca = new JTextField();
-        txtModelo = new JTextField();
-        txtNumeroSerie = new JTextField();
-        cmbEstado = new JComboBox<>(estados);
-        txtUbicacion = new JTextField();
-
-        panel.add(new JLabel("Nombre:"));
-        panel.add(new JLabel("Tipo:"));
-        panel.add(new JLabel("Marca:"));
-        panel.add(new JLabel("Modelo:"));
-        panel.add(new JLabel("N° de serie:"));
-        panel.add(new JLabel("Estado:"));
-        panel.add(new JLabel("Ubicación:"));
-        panel.add(new JLabel(""));
-
-        panel.add(txtNombre);
-        panel.add(cmbTipo);
-        panel.add(txtMarca);
-        panel.add(txtModelo);
-        panel.add(txtNumeroSerie);
-        panel.add(cmbEstado);
-        panel.add(txtUbicacion);
-        panel.add(new JLabel(""));
-
-        return panel;
     }
 
     private JScrollPane crearPanelTabla() {
@@ -90,8 +45,6 @@ public class InventarioFrame extends JFrame {
         tabla = new JTable(modeloTabla);
         tabla.setRowHeight(24);
 
-        // Se mantiene el parámetro e por compatibilidad con versiones anteriores de Java
-        @SuppressWarnings("unused")
         ListSelectionModel selectionModel = tabla.getSelectionModel();
         selectionModel.addListSelectionListener(e -> seleccionarFila());
 
@@ -102,79 +55,52 @@ public class InventarioFrame extends JFrame {
         JPanel panel = new JPanel();
 
         JButton btnAgregar = new JButton("Agregar");
-        JButton btnEditar = new JButton("Guardar cambios");
+        JButton btnEditar = new JButton("Editar");
         JButton btnEliminar = new JButton("Eliminar");
-        JButton btnLimpiar = new JButton("Limpiar");
+        JButton btnActualizar = new JButton("Actualizar lista");
 
-        btnAgregar.addActionListener(e -> agregarEquipo());
-        btnEditar.addActionListener(e -> editarEquipo());
-        btnEliminar.addActionListener(e -> eliminarEquipo());
-        btnLimpiar.addActionListener(e -> limpiarCampos());
+        btnAgregar.addActionListener(e -> abrirFormularioAgregar());
+        btnEditar.addActionListener(e -> abrirFormularioEditar());
+        btnEliminar.addActionListener(e -> eliminarSeleccionado());
+        btnActualizar.addActionListener(e -> cargarDatosDesdeBD());
 
         panel.add(btnAgregar);
         panel.add(btnEditar);
         panel.add(btnEliminar);
-        panel.add(btnLimpiar);
+        panel.add(btnActualizar);
 
         return panel;
     }
 
-    private void agregarEquipo() {
-        if (camposValidos()) return;
-
-        String sql = "INSERT INTO equipos (nombre, tipo, marca, modelo, numero_serie, estado, ubicacion) VALUES (?, ?, ?, ?, ?, ?, ?)";
-
-        try (Connection conn = ConexionBD.conectar();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, txtNombre.getText().trim());
-            pstmt.setString(2, (String) cmbTipo.getSelectedItem());
-            pstmt.setString(3, txtMarca.getText().trim());
-            pstmt.setString(4, txtModelo.getText().trim());
-            pstmt.setString(5, txtNumeroSerie.getText().trim());
-            pstmt.setString(6, (String) cmbEstado.getSelectedItem());
-            pstmt.setString(7, txtUbicacion.getText().trim());
-
-            pstmt.executeUpdate();
-            cargarDatosDesdeBD();
-            limpiarCampos();
-
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error al agregar: " + e.getMessage());
-        }
+    private void abrirFormularioAgregar() {
+        EquipoFormFrame formulario = new EquipoFormFrame(this::cargarDatosDesdeBD);
+        formulario.setVisible(true);
     }
 
-    private void editarEquipo() {
+    private void abrirFormularioEditar() {
         if (idSeleccionado == -1) {
             JOptionPane.showMessageDialog(this, "Selecciona un equipo de la tabla para editarlo.");
             return;
         }
-        if (camposValidos()) return;
 
-        String sql = "UPDATE equipos SET nombre=?, tipo=?, marca=?, modelo=?, numero_serie=?, estado=?, ubicacion=? WHERE id=?";
+        int fila = tabla.getSelectedRow();
 
-        try (Connection conn = ConexionBD.conectar();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Equipo equipo = new Equipo(
+                idSeleccionado,
+                modeloTabla.getValueAt(fila, 1).toString(),
+                modeloTabla.getValueAt(fila, 2).toString(),
+                modeloTabla.getValueAt(fila, 3).toString(),
+                modeloTabla.getValueAt(fila, 4).toString(),
+                modeloTabla.getValueAt(fila, 5).toString(),
+                modeloTabla.getValueAt(fila, 6).toString(),
+                modeloTabla.getValueAt(fila, 7).toString()
+        );
 
-            pstmt.setString(1, txtNombre.getText().trim());
-            pstmt.setString(2, (String) cmbTipo.getSelectedItem());
-            pstmt.setString(3, txtMarca.getText().trim());
-            pstmt.setString(4, txtModelo.getText().trim());
-            pstmt.setString(5, txtNumeroSerie.getText().trim());
-            pstmt.setString(6, (String) cmbEstado.getSelectedItem());
-            pstmt.setString(7, txtUbicacion.getText().trim());
-            pstmt.setInt(8, idSeleccionado);
-
-            pstmt.executeUpdate();
-            cargarDatosDesdeBD();
-            limpiarCampos();
-
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error al editar: " + e.getMessage());
-        }
+        EquipoFormFrame formulario = new EquipoFormFrame(equipo, this::cargarDatosDesdeBD);
+        formulario.setVisible(true);
     }
 
-    private void eliminarEquipo() {
+    private void eliminarSeleccionado() {
         if (idSeleccionado == -1) {
             JOptionPane.showMessageDialog(this, "Selecciona un equipo de la tabla para eliminarlo.");
             return;
@@ -190,7 +116,7 @@ public class InventarioFrame extends JFrame {
                 pstmt.setInt(1, idSeleccionado);
                 pstmt.executeUpdate();
                 cargarDatosDesdeBD();
-                limpiarCampos();
+                idSeleccionado = -1;
 
             } catch (SQLException e) {
                 JOptionPane.showMessageDialog(this, "Error al eliminar: " + e.getMessage());
@@ -200,19 +126,12 @@ public class InventarioFrame extends JFrame {
 
     private void seleccionarFila() {
         int fila = tabla.getSelectedRow();
-        if (fila == -1) return;
-
-        idSeleccionado = (int) modeloTabla.getValueAt(fila, 0);
-        txtNombre.setText(modeloTabla.getValueAt(fila, 1).toString());
-        cmbTipo.setSelectedItem(modeloTabla.getValueAt(fila, 2).toString());
-        txtMarca.setText(modeloTabla.getValueAt(fila, 3).toString());
-        txtModelo.setText(modeloTabla.getValueAt(fila, 4).toString());
-        txtNumeroSerie.setText(modeloTabla.getValueAt(fila, 5).toString());
-        cmbEstado.setSelectedItem(modeloTabla.getValueAt(fila, 6).toString());
-        txtUbicacion.setText(modeloTabla.getValueAt(fila, 7).toString());
+        idSeleccionado = (fila == -1) ? -1 : (int) modeloTabla.getValueAt(fila, 0);
     }
 
-    private void cargarDatosDesdeBD() {
+    // Se deja con visibilidad de paquete para que EquipoFormFrame pueda
+    // llamarla vía referencia de método (this::cargarDatosDesdeBD).
+    void cargarDatosDesdeBD() {
         modeloTabla.setRowCount(0);
         String sql = "SELECT * FROM equipos";
 
@@ -236,27 +155,5 @@ public class InventarioFrame extends JFrame {
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error al cargar datos: " + e.getMessage());
         }
-    }
-
-    private boolean camposValidos() {
-        if (txtNombre.getText().trim().isEmpty() || txtMarca.getText().trim().isEmpty()
-                || txtModelo.getText().trim().isEmpty() || txtNumeroSerie.getText().trim().isEmpty()
-                || txtUbicacion.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Llena todos los campos antes de continuar.");
-            return true;
-        }
-        return false;
-    }
-
-    private void limpiarCampos() {
-        txtNombre.setText("");
-        cmbTipo.setSelectedIndex(0);
-        txtMarca.setText("");
-        txtModelo.setText("");
-        txtNumeroSerie.setText("");
-        cmbEstado.setSelectedIndex(0);
-        txtUbicacion.setText("");
-        idSeleccionado = -1;
-        tabla.clearSelection();
     }
 }
